@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
+import { PrismaClient } from 'generated/prisma';
 
 type url = `http://${string}:${number}`
 
@@ -9,17 +10,44 @@ export class AppController {
   url : url = "http://192.168.1.157:2000"
   socketUrl : url = "http://192.168.1.157:20000"
   @Get()
-  getHello() {
+  async getHello() {
+    const prisma = await new PrismaClient()
+    try{
+      const data = await prisma.urlData.findFirstOrThrow()
+    }
+    catch{
+      const tempdata = await prisma.urlData.create({
+        data:{url:'http://192.168.1.157:2000',socketUrl:'http://192.168.1.157:20000'}
+      })
+      return tempdata
+    }
+    const data = await prisma.urlData.findFirstOrThrow()
+    prisma.$disconnect()
     return {
-      url:this.url,
-      socketUrl:this.socketUrl
+      url:data.url,
+      socketUrl:data.socketUrl
     };
   }
 
   @Post()
-  setUrl(@Body() Data:{url:url , socketurl:url}){
-    this.url = Data.url
-    this.socketUrl = Data.socketurl
+  async setUrl(@Body() Data:{url:url , socketurl:url}){
+
+
+    const prisma = await new PrismaClient()
+    try{
+      const data = await prisma.urlData.findFirstOrThrow()
+    }
+    catch{
+      const tempdata = await prisma.urlData.create({
+        data:{url:'http://192.168.1.157:2000',socketUrl:'http://192.168.1.157:20000'}
+      })
+      return tempdata
+    }
+    const data = await prisma.urlData.findFirstOrThrow()
+    const update = await prisma.urlData.update({
+      where:{id:data.id},
+      data:{url:Data.url , socketUrl:Data.socketurl}
+    })
     return {
       message:'Url Changed'
     }
